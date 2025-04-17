@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+    <title>用户评分</title>
+    <style>
+        .rating-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="row mt-4">
+        <div class="col-12">
+            <h1 class="mb-4">用户评分查询</h1>
+            <p class="lead">输入用户ID，查询该用户对电影的所有评分记录。</p>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="input-group mb-3">
+                        <input type="text" id="userId" class="form-control" placeholder="输入用户ID...">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="button" id="searchBtn">查询</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 用户评分列表 -->
+    <div class="row mt-4 d-none" id="userRatingsSection">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>用户 <span id="displayUserId"></span> 的评分 <span id="ratingCount" class="badge badge-secondary">0</span></h4>
+                </div>
+                <div class="card-body">
+                    <div id="ratingList">
+                        <!-- 评分记录将在这里动态显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        // 检查jQuery是否可用，然后初始化页面
+        window.onload = function() {
+            try {
+                if (typeof jQuery !== 'undefined') {
+                    initPage();
+                } else {
+                    console.error('jQuery未加载，页面功能不可用');
+                    document.getElementById('ratingList').innerHTML = '<div class="alert alert-danger">错误：jQuery未能正确加载。页面功能不可用。</div>';
+                }
+            } catch (e) {
+                console.error('页面初始化错误', e);
+            }
+        };
+        
+        // 页面初始化函数
+        function initPage() {
+            // 搜索按钮点击事件
+            jQuery('#searchBtn').click(function() {
+                const userId = jQuery('#userId').val().trim();
+                if (userId) {
+                    loadUserRatings(userId);
+                } else {
+                    alert('请输入用户ID');
+                }
+            });
+            
+            // 回车键触发搜索
+            jQuery('#userId').keypress(function(e) {
+                if (e.which === 13) {
+                    jQuery('#searchBtn').click();
+                }
+            });
+            
+            // 检查URL参数
+            const urlParams = new URLSearchParams(window.location.search);
+            const userIdParam = urlParams.get('userId');
+            if (userIdParam) {
+                jQuery('#userId').val(userIdParam);
+                loadUserRatings(userIdParam);
+            }
+        }
+        
+        // 加载用户评分
+        function loadUserRatings(userId) {
+            jQuery('#ratingList').html(`
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">正在加载用户评分...</p>
+                </div>
+            `);
+            
+            jQuery('#userRatingsSection').removeClass('d-none');
+            jQuery('#displayUserId').text(userId);
+            
+            jQuery.ajax({
+                url: '/api/rating/user/' + userId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const ratings = response.data;
+                        const count = response.total;
+                        
+                        // 更新评分数量
+                        jQuery('#ratingCount').text(count);
+                        
+                        // 显示评分列表
+                        if (ratings.length === 0) {
+                            jQuery('#ratingList').html('<div class="alert alert-info">该用户暂无评分记录</div>');
+                            return;
+                        }
+                        
+                        let content = '';
+                        ratings.sort((a, b) => parseFloat(b.rating.rating) - parseFloat(a.rating.rating));
+                        
+                        ratings.forEach(function(data) {
+                            const rating = data.rating;
+                            const movie = data.movie;
+                            
+                            if (movie) {
+                                content += `
+                                    <div class="rating-item">
+                                        <div class="row">
+                                            <div class="col-md-9">
+                                                <div class="movie-title">
+                                                    <a href="/movie?id=${movie.movieId}">${movie.title}</a>
+                                                </div>
+                                                <div class="movie-genre text-muted small">${movie.genres}</div>
+                                            </div>
+                                            <div class="col-md-3 text-right">
+                                                <span class="badge badge-pill badge-primary p-2">${rating.rating} 分</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        });
+                        
+                        jQuery('#ratingList').html(content);
+                    } else {
+                        jQuery('#ratingList').html('<div class="alert alert-danger">加载用户评分失败</div>');
+                    }
+                },
+                error: function() {
+                    jQuery('#ratingList').html('<div class="alert alert-danger">加载用户评分失败</div>');
+                }
+            });
+        }
+    </script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>电影详情</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <img th:src="${movie.coverUrl}" class="img-fluid rounded" alt="电影封面">
+        </div>
+        <div class="col-md-8">
+            <h1 th:text="${movie.title}"></h1>
+            <div class="mt-4">
+                <h4>基本信息</h4>
+                <p>年份：<span th:text="${movie.year}"></span></p>
+                <p>类型：<span th:text="${movie.genres}"></span></p>
+                <p>评分：<span th:text="${movie.rating}"></span></p>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4>剧情简介</h4>
+            <p th:text="${movie.description}"></p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

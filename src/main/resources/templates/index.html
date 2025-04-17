@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+    <title>首页</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="jumbotron">
+                <h1 class="display-4">电影评分系统</h1>
+                <p class="lead">基于HBase存储的MovieLens电影数据集，提供电影搜索和评分查询功能。</p>
+                <hr class="my-4">
+                <p>尝试搜索你喜欢的电影，或查看评分最高的电影。</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group mb-3">
+                            <input type="text" id="searchTitle" class="form-control" placeholder="搜索电影标题...">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="button" id="searchTitleBtn">搜索</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group mb-3">
+                            <input type="text" id="searchGenre" class="form-control" placeholder="搜索电影类型...">
+                            <div class="input-group-append">
+                                <button class="btn btn-secondary" type="button" id="searchGenreBtn">搜索</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统信息 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">系统信息</h5>
+                </div>
+                <div class="card-body">
+                    <div id="systemInfo">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="mt-2">正在加载系统信息...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索结果区域 -->
+    <div id="searchResults" class="d-none">
+        <h2 class="mb-4">搜索结果 <span id="resultCount" class="badge badge-primary">0</span></h2>
+        <div class="row" id="movieList">
+            <!-- 搜索结果将在这里动态显示 -->
+        </div>
+    </div>
+
+    <!-- 热门电影区域 -->
+    <div id="topRatedMovies">
+        <h2 class="mb-4">评分最高的电影</h2>
+        <div class="row" id="topMovieList">
+            <!-- 热门电影将在这里动态显示 -->
+            <div class="col-12 text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="mt-2">正在加载热门电影...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 电影卡片模板 -->
+    <template id="movieCardTemplate">
+        <div class="col-md-4 movie-card">
+            <div class="card">
+                <div class="card-body">
+                    <span class="badge rating-badge"></span>
+                    <h5 class="card-title movie-title"></h5>
+                    <p class="card-text movie-genre"></p>
+                    <a href="#" class="btn btn-primary view-details">查看详情</a>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        // 检查jQuery是否可用，然后初始化页面
+        window.onload = function() {
+            try {
+                if (typeof jQuery !== 'undefined') {
+                    initPage();
+                } else {
+                    console.error('jQuery未加载，页面功能不可用');
+                    document.getElementById('systemInfo').innerHTML = '<div class="alert alert-danger">错误：jQuery未能正确加载。页面功能不可用。</div>';
+                }
+            } catch (e) {
+                console.error('页面初始化错误', e);
+            }
+        };
+        
+        // 页面初始化函数
+        function initPage() {
+            // 加载系统信息
+            loadSystemInfo();
+            
+            // 加载热门电影
+            loadTopRatedMovies();
+            
+            // 搜索按钮点击事件
+            jQuery('#searchTitleBtn').click(function() {
+                const keyword = jQuery('#searchTitle').val().trim();
+                if (keyword) {
+                    searchMovies('title', keyword);
+                }
+            });
+            
+            jQuery('#searchGenreBtn').click(function() {
+                const genre = jQuery('#searchGenre').val().trim();
+                if (genre) {
+                    searchMovies('genre', genre);
+                }
+            });
+            
+            // 回车键触发搜索
+            jQuery('#searchTitle').keypress(function(e) {
+                if (e.which === 13) {
+                    jQuery('#searchTitleBtn').click();
+                }
+            });
+            
+            jQuery('#searchGenre').keypress(function(e) {
+                if (e.which === 13) {
+                    jQuery('#searchGenreBtn').click();
+                }
+            });
+        }
+        
+        // 加载系统信息
+        function loadSystemInfo() {
+            jQuery.ajax({
+                url: '/api/system/info',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const tables = response.tables;
+                        let content = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>HBase连接状态</h6>
+                                    <p><span class="badge badge-${response.hbase_connected ? 'success' : 'danger'}">${response.hbase_connected ? '已连接' : '未连接'}</span></p>
+                                    
+                                    <h6 class="mt-3">表状态</h6>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>表名</th>
+                                                <th>状态</th>
+                                                <th>数据量</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>电影表 (movie)</td>
+                                                <td><span class="badge badge-${tables.movie.exists ? 'success' : 'danger'}">${tables.movie.exists ? '存在' : '不存在'}</span></td>
+                                                <td>${tables.movie.count || '未知'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>评分表 (rating)</td>
+                                                <td><span class="badge badge-${tables.rating.exists ? 'success' : 'danger'}">${tables.rating.exists ? '存在' : '不存在'}</span></td>
+                                                <td>${tables.rating.count || '未知'}</td>
+                                            </tr>
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>系统信息</h6>
+                                    <p>本系统使用HBase存储MovieLens电影评分数据集，提供以下功能：</p>
+                                    <ul>
+                                        <li>电影信息查询</li>
+                                        <li>电影评分查询</li>
+                                        <li>用户评分查询</li>
+                                        <li>热门电影推荐</li>
+                                    </ul>
+                                    <p>默认导入了所有电影数据和部分评分数据（为避免数据量过大）。</p>
+                                </div>
+                            </div>
+                        `;
+                        
+                        jQuery('#systemInfo').html(content);
+                    } else {
+                        jQuery('#systemInfo').html('<div class="alert alert-danger">加载系统信息失败</div>');
+                    }
+                },
+                error: function() {
+                    jQuery('#systemInfo').html('<div class="alert alert-danger">加载系统信息失败</div>');
+                }
+            });
+        }
+        
+        // 加载热门电影
+        function loadTopRatedMovies() {
+            jQuery.ajax({
+                url: '/api/movie/top-rated',
+                type: 'GET',
+                data: { count: 12 },
+                success: function(response) {
+                    if (response.success) {
+                        const movies = response.data;
+                        const $topMovieList = jQuery('#topMovieList');
+                        $topMovieList.empty();
+                        
+                        // 对电影进行排序
+                        const sortedMovies = [];
+                        for (const movieId in movies) {
+                            sortedMovies.push(movies[movieId]);
+                        }
+                        sortedMovies.sort((a, b) => b.rating - a.rating);
+                        
+                        // 渲染电影卡片
+                        sortedMovies.forEach(function(movieData) {
+                            const movie = movieData.movie;
+                            const rating = movieData.rating;
+                            const $card = createMovieCard(movie, rating);
+                            $topMovieList.append($card);
+                        });
+                    } else {
+                        jQuery('#topMovieList').html('<div class="col-12"><div class="alert alert-danger">加载热门电影失败</div></div>');
+                    }
+                },
+                error: function() {
+                    jQuery('#topMovieList').html('<div class="col-12"><div class="alert alert-danger">加载热门电影失败</div></div>');
+                }
+            });
+        }
+        
+        // 搜索电影
+        function searchMovies(type, keyword) {
+            let url = '/api/movie/search/';
+            if (type === 'title') {
+                url += 'title?keyword=' + encodeURIComponent(keyword);
+            } else {
+                url += 'genre?genre=' + encodeURIComponent(keyword);
+            }
+            
+            jQuery.ajax({
+                url: url,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const movies = response.data;
+                        const $movieList = jQuery('#movieList');
+                        $movieList.empty();
+                        
+                        jQuery('#resultCount').text(movies.length);
+                        jQuery('#searchResults').removeClass('d-none');
+                        
+                        if (movies.length === 0) {
+                            $movieList.html('<div class="col-12"><div class="alert alert-info">没有找到匹配的电影</div></div>');
+                            return;
+                        }
+                        
+                        // 渲染电影卡片
+                        movies.forEach(function(movie) {
+                            // 获取电影评分
+                            jQuery.ajax({
+                                url: '/api/movie/' + movie.movieId,
+                                type: 'GET',
+                                success: function(detailResponse) {
+                                    if (detailResponse.success) {
+                                        const rating = detailResponse.averageRating;
+                                        const $card = createMovieCard(movie, rating);
+                                        $movieList.append($card);
+                                    }
+                                }
+                            });
+                        });
+                    } else {
+                        jQuery('#movieList').html('<div class="col-12"><div class="alert alert-danger">搜索失败</div></div>');
+                    }
+                },
+                error: function() {
+                    jQuery('#movieList').html('<div class="col-12"><div class="alert alert-danger">搜索失败</div></div>');
+                }
+            });
+        }
+        
+        // 创建电影卡片
+        function createMovieCard(movie, rating) {
+            const template = document.getElementById('movieCardTemplate');
+            const $card = jQuery(template.content.cloneNode(true));
+            
+            $card.find('.movie-title').text(movie.title);
+            $card.find('.movie-genre').text(movie.genres);
+            
+            const $ratingBadge = $card.find('.rating-badge');
+            if (rating) {
+                $ratingBadge.text(rating.toFixed(1));
+                
+                // 根据评分设置不同颜色
+                if (rating >= 4) {
+                    $ratingBadge.addClass('badge-success');
+                } else if (rating >= 3) {
+                    $ratingBadge.addClass('badge-primary');
+                } else if (rating >= 2) {
+                    $ratingBadge.addClass('badge-warning');
+                } else {
+                    $ratingBadge.addClass('badge-danger');
+                }
+            } else {
+                $ratingBadge.text('N/A').addClass('badge-secondary');
+            }
+            
+            // 设置查看详情链接
+            $card.find('.view-details').attr('href', '/movie?id=' + movie.movieId);
+            
+            return $card;
+        }
+    </script>
+</th:block>
+</body>
+</html> 

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">电影评分系统</title>
+    
+    <!-- 引入jQuery (使用多个CDN以确保可用性) -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        // 如果主CDN加载失败，尝试回退到另一个CDN
+        if (typeof jQuery === 'undefined') {
+            document.write('<script src="https://code.jquery.com/jquery-3.5.1.min.js"><\/script>');
+        }
+    </script>
+    <script>
+        // 最终检查
+        if (typeof jQuery === 'undefined') {
+            document.write('<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"><\/script>');
+        }
+    </script>
+    
+    <!-- 引入Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    
+    <!-- 自定义CSS -->
+    <style>
+        .navbar {
+            margin-bottom: 20px;
+        }
+        .movie-card {
+            margin-bottom: 20px;
+        }
+        .movie-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .movie-genre {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .rating-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">电影评分系统</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item" th:classappend="${#httpServletRequest.getRequestURI() == '/' ? 'active' : ''}">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item" th:classappend="${#httpServletRequest.getRequestURI().contains('/user-ratings') ? 'active' : ''}">
+                        <a class="nav-link" href="/user-ratings">用户评分</a>
+                    </li>
+                </ul>
+                <form class="form-inline my-2 my-lg-0" action="/" method="get">
+                    <input class="form-control mr-sm-2" type="search" name="keyword" placeholder="搜索电影标题" aria-label="Search">
+                    <button class="btn btn-outline-light my-2 my-sm-0" type="submit">搜索</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <div class="container">
+        <div layout:fragment="content">
+            <!-- 这里将被各个页面的内容替换 -->
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white mt-5 py-3">
+        <div class="container text-center">
+            <p>© 2025 电影评分系统 - 基于HBase的MovieLens数据集</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript 依赖 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 验证jQuery是否正常加载的检查 -->
+    <script>
+        if (typeof jQuery === 'undefined') {
+            console.error('jQuery未能正确加载，页面功能可能受到影响');
+            document.body.innerHTML = '<div class="container mt-5"><div class="alert alert-danger">页面加载出错：jQuery未能正确加载。请刷新页面或联系管理员。</div></div>' + document.body.innerHTML;
+        } else {
+            console.log('jQuery已成功加载，版本: ' + jQuery.fn.jquery);
+        }
+    </script>
+    
+    <!-- 页面特定的脚本 -->
+    <th:block layout:fragment="scripts"></th:block>
+</body>
+</html> 

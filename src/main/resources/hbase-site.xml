@@ -1,0 +1,16 @@
+<configuration>
+    <!-- 添加ZooKeeper配置 -->
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>localhost</value> <!-- 如果是远程服务器需修改IP -->
+    </property>
+    <property>
+        <name>hbase.zookeeper.property.clientPort</name>
+        <value>2181</value> <!-- 确认与HBase配置的ZooKeeper端口一致 -->
+    </property>
+    <!-- 增加超时配置 -->
+    <property>
+        <name>hbase.client.operation.timeout</name>
+        <value>120000</value> <!-- 延长操作超时时间 -->
+    </property>
+</configuration>

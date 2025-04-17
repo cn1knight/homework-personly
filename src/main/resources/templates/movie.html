@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+    <title>电影详情</title>
+    <style>
+        .rating-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #28a745;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .user-rating {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div id="movieDetail">
+        <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">首页</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">电影详情</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- 电影基本信息 -->
+        <div class="row" id="movieInfo">
+            <div class="col-12 text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="mt-2">正在加载电影详情...</p>
+            </div>
+        </div>
+
+        <!-- 评分统计 -->
+        <div class="row mt-5" id="ratingInfo">
+            <div class="col-12">
+                <h2>评分统计</h2>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="rating-circle" id="averageRating">0.0</div>
+                            <div class="ml-4">
+                                <h4>平均评分</h4>
+                                <p>基于 <span id="ratingCount">0</span> 个用户评分</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户评分列表 -->
+        <div class="row mt-5" id="userRatings">
+            <div class="col-12">
+                <h2>用户评分 <span id="userRatingCount" class="badge badge-secondary">0</span></h2>
+                <div id="ratingsList" class="mt-3">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="mt-2">正在加载用户评分...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        // 检查jQuery是否可用，然后初始化页面
+        window.onload = function() {
+            try {
+                if (typeof jQuery !== 'undefined') {
+                    initPage();
+                } else {
+                    console.error('jQuery未加载，页面功能不可用');
+                    document.getElementById('movieInfo').innerHTML = '<div class="col-12"><div class="alert alert-danger">错误：jQuery未能正确加载。页面功能不可用。</div></div>';
+                }
+            } catch (e) {
+                console.error('页面初始化错误', e);
+            }
+        };
+        
+        // 页面初始化函数
+        function initPage() {
+            // 获取URL参数中的电影ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const movieId = urlParams.get('id');
+            
+            if (movieId) {
+                // 加载电影详情
+                loadMovieDetail(movieId);
+                
+                // 加载电影评分
+                loadMovieRatings(movieId);
+            } else {
+                // 未指定电影ID，显示错误信息
+                jQuery('#movieInfo').html('<div class="col-12"><div class="alert alert-danger">未找到电影ID参数</div></div>');
+                jQuery('#ratingInfo').hide();
+                jQuery('#userRatings').hide();
+            }
+        }
+        
+        // 加载电影详情
+        function loadMovieDetail(movieId) {
+            jQuery.ajax({
+                url: '/api/movie/' + movieId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const movie = response.data;
+                        const averageRating = response.averageRating;
+                        
+                        // 更新页面标题
+                        document.title = movie.title + ' - 电影评分系统';
+                        
+                        // 填充电影信息
+                        let content = `
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h1 class="card-title">${movie.title}</h1>
+                                        <p class="text-muted">${movie.genres}</p>
+                                        <hr>
+                                        <p><strong>电影ID:</strong> ${movie.movieId}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        jQuery('#movieInfo').html(content);
+                        
+                        // 更新评分信息
+                        jQuery('#averageRating').text(averageRating.toFixed(1));
+                        
+                        // 根据评分改变颜色
+                        const $ratingCircle = jQuery('#averageRating');
+                        if (averageRating >= 4) {
+                            $ratingCircle.css('background-color', '#28a745'); // 绿色
+                        } else if (averageRating >= 3) {
+                            $ratingCircle.css('background-color', '#007bff'); // 蓝色
+                        } else if (averageRating >= 2) {
+                            $ratingCircle.css('background-color', '#ffc107'); // 黄色
+                        } else {
+                            $ratingCircle.css('background-color', '#dc3545'); // 红色
+                        }
+                    } else {
+                        jQuery('#movieInfo').html('<div class="col-12"><div class="alert alert-danger">' + response.message + '</div></div>');
+                    }
+                },
+                error: function() {
+                    jQuery('#movieInfo').html('<div class="col-12"><div class="alert alert-danger">加载电影详情失败</div></div>');
+                }
+            });
+        }
+        
+        // 加载电影评分
+        function loadMovieRatings(movieId) {
+            jQuery.ajax({
+                url: '/api/rating/movie/' + movieId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const ratings = response.data;
+                        const ratingCount = response.total;
+                        
+                        // 更新评分数量
+                        jQuery('#ratingCount').text(ratingCount);
+                        jQuery('#userRatingCount').text(ratingCount);
+                        
+                        // 显示评分列表
+                        if (ratings.length === 0) {
+                            jQuery('#ratingsList').html('<div class="alert alert-info">暂无用户评分</div>');
+                            return;
+                        }
+                        
+                        let content = '';
+                        ratings.forEach(function(rating, index) {
+                            if (index < 50) { // 限制显示前50条评分
+                                content += `
+                                    <div class="user-rating">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <strong>用户 ${rating.userId}</strong>
+                                            </div>
+                                            <div>
+                                                <span class="badge badge-primary">${rating.rating}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        });
+                        
+                        if (ratings.length > 50) {
+                            content += '<div class="mt-3 text-center"><p>显示前50条评分，共' + ratings.length + '条</p></div>';
+                        }
+                        
+                        jQuery('#ratingsList').html(content);
+                    } else {
+                        jQuery('#ratingsList').html('<div class="alert alert-danger">加载评分失败</div>');
+                    }
+                },
+                error: function() {
+                    jQuery('#ratingsList').html('<div class="alert alert-danger">加载评分失败</div>');
+                }
+            });
+        }
+    </script>
+</th:block>
+</body>
+</html> 

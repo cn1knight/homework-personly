@@ -1,0 +1,9 @@
+{
+  "connected": false,
+  "zookeeperQuorum": "192.168.56.13",
+  "zookeeperPort": "2181",
+  "connectionState": "正在尝试连接...",
+  "error": "java.util.concurrent.TimeoutException: null",
+  "configKeys": "Configuration: core-default.xml, core-site.xml, hbase-default.xml, hbase-site.xml",
+  "status": "无法连接到HBase服务器"
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="50" height="50">
+  <defs>
+    <linearGradient id="hbaseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff6b35;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f7931e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="45" fill="url(#hbaseGradient)" stroke="#e85a2b" stroke-width="2"/>
+  <text x="50" y="35" font-family="Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="white">HBase</text>
+  <rect x="25" y="45" width="50" height="8" fill="white" opacity="0.9" rx="2"/>
+  <rect x="25" y="55" width="50" height="8" fill="white" opacity="0.7" rx="2"/>
+  <rect x="25" y="65" width="50" height="8" fill="white" opacity="0.5" rx="2"/>
+  <circle cx="30" cy="49" r="1.5" fill="#ff6b35"/>
+  <circle cx="30" cy="59" r="1.5" fill="#ff6b35"/>
+  <circle cx="30" cy="69" r="1.5" fill="#ff6b35"/>
+</svg>

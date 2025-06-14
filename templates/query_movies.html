@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}电影查询 | 电影评分网站{% endblock %}
+
+{% block content %}
+    <h1 class="page-title">
+        <i class="fas fa-film"></i>
+        <span>电影查询</span>
+    </h1>
+
+    <!-- 查询表单 -->
+    <div class="query-form">
+        <h2 class="form-title"><i class="fas fa-search"></i> 电影查询</h2>
+        <form method="post">
+            <div class="form-group">
+                <label for="movie_id"><i class="fas fa-hashtag"></i> 电影ID</label>
+                <input type="text" id="movie_id" name="movie_id" placeholder="输入电影ID">
+            </div>
+
+            <div class="form-group">
+                <label for="movie_title"><i class="fas fa-film"></i> 电影名称</label>
+                <input type="text" id="movie_title" name="movie_title" placeholder="输入电影名称">
+            </div>
+
+            <button type="submit" class="btn"><i class="fas fa-search"></i> 查询电影</button>
+        </form>
+    </div>
+
+    <!-- 查询结果 -->
+    {% if results %}
+    <div class="results-container">
+        {% for movie in results %}
+        <div class="movie-card">
+            <div class="movie-poster">
+                <i class="fas fa-film"></i>
+            </div>
+            <div class="movie-info">
+                <h3 class="movie-title">{{ movie.title }}</h3>
+                <div class="movie-id">ID: {{ movie.movie_id }}</div>
+                <div class="movie-rating">
+                    {% if movie.avg_rating and movie.avg_rating != 'N/A' %}
+                    <span class="rating-score">
+                        <i class="fas fa-star"></i>
+                        {{ "%.1f"|format(movie.avg_rating|float) }}
+                    </span>
+                    <span class="rating-count">({{ movie.rating_count }} 评分)</span>
+                    {% else %}
+                    <span class="no-rating">
+                        <i class="fas fa-star-o"></i>
+                        暂无评分
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="movie-genres">
+                    {% for genre in movie.genres.split('|') %}
+                    <span class="genre-tag">{{ genre }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif message %}
+    <div class="message">
+        <i class="fas fa-info-circle"></i> {{ message }}
+    </div>
+    {% endif %}
+
+    <style>
+        /* 查询表单 */
+        .query-form {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .form-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        /* 结果卡片 */
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .movie-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .movie-poster {
+            height: 180px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+        }
+
+        .movie-info {
+            padding: 1.5rem;
+        }
+
+        .movie-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .movie-id {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .movie-rating {
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rating-score {
+            color: #ffa500;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .rating-count {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .no-rating {
+            color: var(--text-secondary);
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .movie-genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .genre-tag {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            .query-form {
+                padding: 1.5rem;
+            }
+
+            .results-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+/* 修复输入框文字颜色问题 */
+.query-form input[type="text"] {
+    color: #333; /* 设置文字颜色为深色 */
+    background-color: #fff; /* 确保背景是白色 */
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+/* 修复输入框聚焦状态 */
+.query-form input[type="text"]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+    outline: none;
+}
+
+/* 修复自动填充样式 */
+.query-form input[type="text"]:-webkit-autofill,
+.query-form input[type="text"]:-webkit-autofill:hover,
+.query-form input[type="text"]:-webkit-autofill:focus {
+    -webkit-text-fill-color: #333;
+    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+    </style>
+{% endblock %}

@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block title %}数据导入 | 光影数据{% endblock %}
+
+{% block content %}
+<div class="content-card import-container">
+    <h2><i class="fas fa-upload"></i> 数据导入</h2>
+    <p class="description">请选择或拖拽电影 (movies.csv) 和评分 (ratings.csv) 文件进行导入。系统将分析文件并在导入前显示基本信息。如果HBase中已存在对应表，将会被删除并重建。</p>
+
+    <form id="importForm" method="POST" enctype="multipart/form-data">
+        <div class="file-drop-area-container">
+            <div class="file-drop-area" id="moviesDropArea">
+                <i class="fas fa-file-csv fa-3x"></i>
+                <p>拖拽 <code>movies.csv</code> 到此处，或点击选择文件</p>
+                <input type="file" id="movies_file" name="movies_file" accept=".csv" required>
+                <div id="moviesFileInfo" class="file-info"></div>
+            </div>
+
+            <div class="file-drop-area" id="ratingsDropArea">
+                <i class="fas fa-file-csv fa-3x"></i>
+                <p>拖拽 <code>ratings.csv</code> 到此处，或点击选择文件</p>
+                <input type="file" id="ratings_file" name="ratings_file" accept=".csv" required>
+                <div id="ratingsFileInfo" class="file-info"></div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-import" disabled><i class="fas fa-cogs"></i> 分析并准备导入</button>
+    </form>
+
+    <div id="analysisResultContainer" class="analysis-results" style="display: none;">
+        <h3><i class="fas fa-clipboard-check"></i> 文件分析结果</h3>
+        <div id="moviesAnalysis"></div>
+        <div id="ratingsAnalysis"></div>
+        <button id="startImportBtn" class="btn btn-success btn-start-import" style="display: none;"><i class="fas fa-play-circle"></i> 开始导入</button>
+    </div>
+
+    <div id="progressContainer" class="progress-section" style="display: none;">
+        <h3><i class="fas fa-spinner fa-spin"></i> 导入进度</h3>
+        <div id="moviesProgressItem" class="progress-item">
+            <strong>电影数据:</strong> <span id="moviesStatusText">等待中...</span>
+            <div class="progress-bar-container">
+                <div id="moviesProgressBar" class="progress-bar-fill" style="width: 0%;">0%</div>
+            </div>
+        </div>
+        <div id="ratingsProgressItem" class="progress-item">
+            <strong>评分数据:</strong> <span id="ratingsStatusText">等待中...</span>
+            <div class="progress-bar-container">
+                <div id="ratingsProgressBar" class="progress-bar-fill" style="width: 0%;">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="messageContainer" class="message-area"></div>
+</div>
+
+<style>
+.import-container h2 {
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+.description {
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.file-drop-area-container {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.file-drop-area {
+    flex: 1;
+    border: 2px dashed var(--primary);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background-color: rgba(var(--rgb-primary),0.05);
+}
+
+.file-drop-area:hover, .file-drop-area.dragover {
+    background-color: rgba(var(--rgb-primary),0.1);
+    border-color: var(--primary-dark);
+}
+
+.file-drop-area i.fa-file-csv {
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.file-drop-area p {
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 0.5rem;
+}
+
+.file-drop-area input[type="file"] {
+    display: none; /* Hidden, triggered by click on drop area */
+}
+
+.file-info {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--secondary);
+}
+
+.btn-import, .btn-start-import {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    margin: 1rem auto;
+    padding: 0.8rem 1.5rem;
+}
+
+.btn-import:disabled {
+    background: var(--dark-bg);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.5);
+    cursor: not-allowed;
+}
+
+.analysis-results, .progress-section {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.analysis-results h3, .progress-section h3 {
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+}
+
+#moviesAnalysis, #ratingsAnalysis {
+    background-color: var(--dark-bg);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    white-space: pre-wrap; /* Preserve line breaks in analysis */
+}
+
+.progress-item {
+    margin-bottom: 1.5rem;
+}
+
+.progress-item strong {
+    color: var(--secondary);
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: var(--dark-bg);
+    border-radius: var(--border-radius);
+    padding: 3px;
+    margin-top: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.progress-bar-fill {
+    height: 20px;
+    background-color: var(--primary);
+    border-radius: var(--border-radius);
+    text-align: center;
+    line-height: 20px;
+    color: white;
+    font-weight: bold;
+    transition: width 0.3s ease-in-out;
+}
+
+.progress-bar-fill.error {
+    background-color: #e74c3c; /* Red for error */
+}
+.progress-bar-fill.success {
+    background-color: #2ecc71; /* Green for success */
+}
+
+.message-area {
+    margin-top: 1.5rem;
+}
+.message-area .alert {
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    color: white;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.message-area .alert-success { background-color: #2ecc71; }
+.message-area .alert-danger { background-color: #e74c3c; }
+.message-area .alert-warning { background-color: #f39c12; }
+.message-area .alert-info { background-color: var(--secondary); }
+
+/* Add primary color RGB for rgba usage */
+:root {
+    --rgb-primary: 255, 107, 107; /* Assuming --primary is #ff6b6b */
+}
+
+@media (max-width: 768px) {
+    .file-drop-area-container {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const importForm = document.getElementById('importForm');
+    const moviesFileInput = document.getElementById('movies_file');
+    const ratingsFileInput = document.getElementById('ratings_file');
+    const moviesDropArea = document.getElementById('moviesDropArea');
+    const ratingsDropArea = document.getElementById('ratingsDropArea');
+    const moviesFileInfo = document.getElementById('moviesFileInfo');
+    const ratingsFileInfo = document.getElementById('ratingsFileInfo');
+    const analyzeBtn = document.querySelector('.btn-import');
+    const startImportBtn = document.getElementById('startImportBtn');
+
+    const analysisResultContainer = document.getElementById('analysisResultContainer');
+    const moviesAnalysisDiv = document.getElementById('moviesAnalysis');
+    const ratingsAnalysisDiv = document.getElementById('ratingsAnalysis');
+
+    const progressContainer = document.getElementById('progressContainer');
+    const moviesProgressBar = document.getElementById('moviesProgressBar');
+    const moviesStatusText = document.getElementById('moviesStatusText');
+    const ratingsProgressBar = document.getElementById('ratingsProgressBar');
+    const ratingsStatusText = document.getElementById('ratingsStatusText');
+    const messageContainer = document.getElementById('messageContainer');
+    let intervalId;
+
+    let moviesFile = null;
+    let ratingsFile = null;
+
+    function setupDropArea(dropArea, fileInput, fileInfoDiv, fileVarSetter) {
+        dropArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            handleFileSelect(e.target.files[0], fileInfoDiv, fileVarSetter, fileInput);
+        });
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false);
+        });
+        dropArea.addEventListener('drop', (e) => handleFileDrop(e, fileInfoDiv, fileVarSetter, fileInput), false);
+    }
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function handleFileSelect(file, infoDiv, fileVarSetter, inputElement) {
+        if (file && file.name.endsWith('.csv')) {
+            infoDiv.innerHTML = `已选择: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            fileVarSetter(file);
+             // Ensure the input element's files property is updated for the FormData object
+            if (inputElement.files.length === 0 || inputElement.files[0] !== file) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                inputElement.files = dataTransfer.files;
+            }
+        } else {
+            infoDiv.innerHTML = `<span style="color:red;">请选择有效的CSV文件</span>`;
+            fileVarSetter(null);
+            inputElement.value = ''; // Clear the input if invalid file
+        }
+        checkFilesSelected();
+    }
+
+    function handleFileDrop(e, infoDiv, fileVarSetter, fileInput) {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        handleFileSelect(file, infoDiv, fileVarSetter, fileInput);
+    }
+
+    function checkFilesSelected() {
+        if (moviesFile && ratingsFile) {
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML = '<i class="fas fa-cogs"></i> 分析并准备导入';
+        } else {
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<i class="fas fa-times-circle"></i> 请选择两个CSV文件';
+        }
+    }
+
+    setupDropArea(moviesDropArea, moviesFileInput, moviesFileInfo, (file) => moviesFile = file);
+    setupDropArea(ratingsDropArea, ratingsFileInput, ratingsFileInfo, (file) => ratingsFile = file);
+
+    importForm.addEventListener('submit', function(event) {
+        event.preventDefault(); 
+        if (!moviesFile || !ratingsFile) {
+            showMessage('请先选择电影和评分CSV文件。', 'danger');
+            return;
+        }
+        analysisResultContainer.style.display = 'block';
+        moviesAnalysisDiv.innerHTML = `<strong>Movies 文件 (<code>${moviesFile.name}</code>):</strong>\n - 大小: ${(moviesFile.size / 1024 / 1024).toFixed(2)} MB\n - 类型: ${moviesFile.type || 'N/A'}\n - 预览 (前5行，如果可读):\n<pre id="moviesPreview"></pre>`;
+        ratingsAnalysisDiv.innerHTML = `<strong>Ratings 文件 (<code>${ratingsFile.name}</code>):</strong>\n - 大小: ${(ratingsFile.size / 1024 / 1024).toFixed(2)} MB\n - 类型: ${ratingsFile.type || 'N/A'}\n - 预览 (前5行，如果可读):\n<pre id="ratingsPreview"></pre>`;
+        
+        readFilePreview(moviesFile, 'moviesPreview');
+        readFilePreview(ratingsFile, 'ratingsPreview');
+
+        startImportBtn.style.display = 'block';
+        showMessage('文件分析完成。确认无误后，请点击“开始导入”按钮。', 'info');
+    });
+    
+    function readFilePreview(file, previewElementId) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const lines = text.split('\n').slice(0, 5).join('\n');
+            document.getElementById(previewElementId).textContent = lines;
+        };
+        reader.onerror = function() {
+            document.getElementById(previewElementId).textContent = "无法预览文件内容。";
+        };
+        // Read only a small portion for preview to avoid performance issues with large files
+        const blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
+        reader.readAsText(blobSlice.call(file, 0, 1024)); // Read first 1KB
+    }
+
+    startImportBtn.addEventListener('click', function() {
+        showMessage('<i class="fas fa-spinner fa-spin"></i> 开始导入数据...', 'info', false);
+        progressContainer.style.display = 'block';
+        resetProgressBars();
+        startImportBtn.disabled = true;
+        analyzeBtn.disabled = true;
+
+        const formData = new FormData(); // Create new FormData for actual submission
+        formData.append('movies_file', moviesFileInput.files[0]);
+        formData.append('ratings_file', ratingsFileInput.files[0]);
+
+        fetch('{{ url_for("import_data") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(`<i class="fas fa-check-circle"></i> ${data.message}`, 'success');
+                startProgressCheck();
+            } else {
+                showMessage(`<i class="fas fa-times-circle"></i> ${data.message}`, 'danger');
+                progressContainer.style.display = 'none';
+                startImportBtn.disabled = false;
+                analyzeBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            showMessage(`<i class="fas fa-exclamation-triangle"></i> 请求失败: ${error}`, 'danger');
+            progressContainer.style.display = 'none';
+            startImportBtn.disabled = false;
+            analyzeBtn.disabled = false;
+        });
+    });
+
+    function startProgressCheck() {
+        if (intervalId) clearInterval(intervalId);
+        intervalId = setInterval(fetchProgress, 2000);
+    }
+
+    function fetchProgress() {
+        fetch('{{ url_for("get_import_progress") }}')
+        .then(response => response.json())
+        .then(data => {
+            updateProgressBarUI(moviesProgressBar, moviesStatusText, data.movies, '电影数据');
+            updateProgressBarUI(ratingsProgressBar, ratingsStatusText, data.ratings, '评分数据');
+
+            const moviesDone = data.movies.percentage >= 100 || data.movies.error;
+            const ratingsDone = data.ratings.percentage >= 100 || data.ratings.error;
+
+            if (moviesDone && ratingsDone) {
+                clearInterval(intervalId);
+                if (!data.movies.error && !data.ratings.error) {
+                    showMessage('<i class="fas fa-check-double"></i> 所有数据导入完成！批处理计算已在后台启动。', 'success', true);
+                } else {
+                    let errorMsg = '部分或全部数据导入遇到问题：';
+                    if(data.movies.error) errorMsg += '电影数据导入失败。 ';
+                    if(data.ratings.error) errorMsg += '评分数据导入失败。 ';
+                    errorMsg += '请检查服务器日志。';
+                    showMessage(`<i class="fas fa-exclamation-triangle"></i> ${errorMsg}`, 'warning', true);
+                }
+                startImportBtn.disabled = false;
+                analyzeBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('获取进度失败:', error);
+        });
+    }
+
+    function updateProgressBarUI(barElement, statusElement, progressData, type) {
+        barElement.classList.remove('error', 'success');
+        if (progressData.error) {
+            barElement.style.width = '100%';
+            barElement.classList.add('error');
+            barElement.textContent = '错误';
+            statusElement.textContent = `${type}: 导入出错`;
+            return;
+        }
+        const percentage = Math.min(100, progressData.percentage || 0);
+        barElement.style.width = percentage + '%';
+        barElement.textContent = percentage + '%';
+        statusElement.textContent = `${type}: ${progressData.current} / ${progressData.total || '未知'} (估算) - ${percentage}%`;
+
+        if (percentage >= 100) {
+            statusElement.textContent = `${type}: 导入完成 (${progressData.current} 条记录)`;
+            barElement.classList.add('success');
+        } 
+    }
+    
+    function resetProgressBars(){
+        moviesProgressBar.style.width = '0%';
+        moviesProgressBar.textContent = '0%';
+        moviesProgressBar.classList.remove('error', 'success');
+        moviesStatusText.textContent = '准备导入...';
+
+        ratingsProgressBar.style.width = '0%';
+        ratingsProgressBar.textContent = '0%';
+        ratingsProgressBar.classList.remove('error', 'success');
+        ratingsStatusText.textContent = '等待电影数据导入完成...';
+    }
+
+    function showMessage(html, type = 'info', append = false) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.innerHTML = html;
+        if (append) {
+            messageContainer.appendChild(alertDiv);
+        } else {
+            messageContainer.innerHTML = ''; 
+            messageContainer.appendChild(alertDiv);
+        }
+    }
+
+    // Initialize button state
+    checkFilesSelected(); 
+});
+</script>
+{% endblock %}

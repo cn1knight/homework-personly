@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="50" height="50">
+  <defs>
+    <linearGradient id="pythonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3776ab;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffd43b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="45" fill="url(#pythonGradient)" stroke="#2c5282" stroke-width="2"/>
+  <text x="50" y="35" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="white">Python</text>
+  <path d="M30 55 Q50 45 70 55 Q50 65 30 55" fill="white" opacity="0.8"/>
+  <circle cx="40" cy="55" r="3" fill="#3776ab"/>
+  <circle cx="60" cy="55" r="3" fill="#ffd43b"/>
+</svg>

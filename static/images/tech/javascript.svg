@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="50" height="50">
+  <defs>
+    <linearGradient id="jsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f7df1e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f0db4f;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="45" fill="url(#jsGradient)" stroke="#d4c441" stroke-width="2"/>
+  <text x="50" y="30" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#323330">JavaScript</text>
+  <text x="35" y="55" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#323330">J</text>
+  <text x="65" y="55" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#323330">S</text>
+  <path d="M25 65 Q50 75 75 65" stroke="#323330" stroke-width="2" fill="none"/>
+</svg>

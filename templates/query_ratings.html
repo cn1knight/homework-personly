@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block title %}评分查询 | 电影评分网站{% endblock %}
+
+{% block custom_css %}
+    /* 评分统计部分 */
+    .rating-stats {
+        margin-bottom: 2rem;
+    }
+
+    .rating-stats h4 {
+        color: var(--primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.3rem;
+    }
+
+    .stats-card {
+        background: #f8f9fa;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid var(--primary);
+    }
+
+    .stats-card h5 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+        color: #333;
+        font-size: 1.2rem;
+    }
+
+    .movie-genres {
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        color: #666;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .movie-genres span:first-child {
+        font-weight: 500;
+    }
+
+    .compact-stats {
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        align-items: center;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .stat-label {
+        font-weight: 500;
+        color: #555;
+    }
+
+    .stat-value {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    /* 评分分布条形图 */
+    .compact-rating-bars {
+        margin-top: 1.5rem;
+    }
+
+    .rating-bar-container {
+        margin-bottom: 0.8rem;
+    }
+
+    .rating-bar-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.3rem;
+        font-size: 0.9rem;
+    }
+
+    .rating-bar-label .stars {
+        color: var(--warning);
+        width: 5em;
+    }
+
+    .rating-bar-label .count {
+        font-weight: 500;
+        width: 2em;
+        text-align: right;
+    }
+
+    .rating-bar-label .percent {
+        color: #666;
+        width: 3em;
+        text-align: right;
+    }
+
+    .rating-bar {
+        height: 10px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    .rating-bar-fill {
+        height: 100%;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        border-radius: 5px;
+        transition: width 0.5s ease;
+    }
+
+    /* 详情按钮样式 */
+    .btn-details {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        margin-top: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-details:hover {
+        background-color: var(--secondary);
+        transform: translateY(-2px);
+    }
+
+    /* 用户评价卡片样式 */
+    .rating-details {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+
+    .user-ratings-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .user-rating-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        transition: all 0.3s ease;
+    }
+
+    .user-rating-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 80px;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .user-id {
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    .rating-info {
+        flex: 1;
+    }
+
+    .rating-stars {
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .rating-stars i {
+        color: var(--warning);
+        font-size: 1rem;
+    }
+
+    .rating-value {
+        margin-left: 0.5rem;
+        font-weight: bold;
+        color: var(--dark);
+        font-size: 0.9rem;
+    }
+
+    .movie-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        font-size: 0.85rem;
+        color: #666;
+        align-items: center;
+    }
+
+    .movie-title {
+        font-weight: 500;
+        color: var(--dark);
+    }
+
+    /* 查询表单 */
+    .query-form {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+        max-width: 600px;
+        margin: 0 auto 2rem;
+    }
+
+    .form-title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: var(--primary);
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8rem;
+    }
+
+    /* 结果容器 */
+    .results-container {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        box-shadow: var(--shadow);
+        margin-top: 2rem;
+    }
+
+    .results-container h3 {
+        color: var(--primary);
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    @media (max-width: 768px) {
+        .query-form {
+            padding: 1.5rem;
+        }
+
+        .results-container {
+            padding: 1.5rem;
+        }
+
+        .stat-row {
+            gap: 1rem;
+        }
+
+        .user-rating-card {
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .user-info {
+            flex-direction: row;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .user-avatar {
+            margin-bottom: 0;
+        }
+    }
+
+/* 修复输入框文字颜色问题 */
+.query-form input[type="text"] {
+    color: #333; /* 设置文字颜色为深色 */
+    background-color: #fff; /* 确保背景是白色 */
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+/* 修复输入框聚焦状态 */
+.query-form input[type="text"]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+    outline: none;
+}
+
+/* 修复自动填充样式 */
+.query-form input[type="text"]:-webkit-autofill,
+.query-form input[type="text"]:-webkit-autofill:hover,
+.query-form input[type="text"]:-webkit-autofill:focus {
+    -webkit-text-fill-color: #333;
+    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+{% endblock %}
+
+{% block content %}
+    <h1 class="page-title">
+        <i class="fas fa-star"></i>
+        <span>评分查询</span>
+    </h1>
+
+    <!-- 查询表单 -->
+    <div class="query-form">
+        <h2 class="form-title"><i class="fas fa-search"></i> 电影评分查询</h2>
+        <form method="post">
+            <div class="form-group">
+                <label for="movie_title"><i class="fas fa-film"></i> 电影名称</label>
+                <input type="text" id="movie_title" name="movie_title" placeholder="输入电影名称" required>
+            </div>
+            <button type="submit" class="btn"><i class="fas fa-search"></i> 查询评分</button>
+        </form>
+    </div>
+
+    <!-- 查询结果 -->
+    {% if results or rating_stats %}
+    <div class="results-container">
+        <h3><i class="fas fa-list"></i> 查询结果</h3>
+        
+        <!-- 评分统计部分 -->
+        {% if rating_stats %}
+        <div class="rating-stats">
+            <h4><i class="fas fa-chart-bar"></i> 评分统计</h4>
+            {% for movie_title, stats in rating_stats.items() %}
+            <div class="stats-card">
+                <h5>{{ movie_title }}</h5>
+                <div class="movie-genres">
+                    <span>类型:</span>
+                    <span>{{ stats.genres }}</span>
+                </div>
+
+                <!-- 整合的评分统计信息 -->
+                <div class="compact-stats">
+                    <div class="stat-row">
+                        <div class="stat-item">
+                            <span class="stat-label">平均分:</span>
+                            <span class="stat-value">{{ stats.avg_rating }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">最高分:</span>
+                            <span class="stat-value">{{ stats.max_rating }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">最低分:</span>
+                            <span class="stat-value">{{ stats.min_rating }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">评价数:</span>
+                            <span class="stat-value">{{ stats.rating_count }}</span>
+                        </div>
+                    </div>
+
+                    <!-- 评分分布条形图 -->
+                    <div class="compact-rating-bars">
+                        {% for i in range(5, 0, -1) %}
+                        <div class="rating-bar-container">
+                            <div class="rating-bar-label">
+                                <span class="stars">
+                                    {% for star in range(i) %}★{% endfor %}
+                                </span>
+                                <span class="count">{{ stats.rating_distribution.get(i|string, 0) }}</span>
+                                <span class="percent">{{ ((stats.rating_distribution.get(i|string, 0) / stats.rating_count) * 100)|round(1) }}%</span>
+                            </div>
+                            <div class="rating-bar">
+                                <div class="rating-bar-fill" style="width: {{ (stats.rating_distribution.get(i|string, 0) / stats.rating_count) * 100 }}%"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 详情按钮和详情卡片 -->
+                <button class="btn-details" onclick="toggleDetails('details-{{ loop.index }}')">
+                    <i class="fas fa-list"></i>
+                    评价详情
+                </button>
+                <div id="details-{{ loop.index }}" class="rating-details" style="display: none;">
+                    <div class="user-ratings-container">
+                        {% for detail in stats.rating_details %}
+                        <div class="user-rating-card">
+                            <div class="user-info">
+                                <div class="user-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="user-id">用户 #{{ detail.user_id }}</div>
+                            </div>
+                            <div class="rating-info">
+                                <div class="rating-stars">
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= detail.rating|int %}
+                                            <i class="fas fa-star"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="rating-value">{{ detail.rating }}</span>
+                                </div>
+                                <div class="movie-info">
+                                    <span class="movie-id">电影ID: {{ detail.movie_id }}</span>
+                                    <span class="movie-title">{{ detail.movie_title }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% elif message %}
+    <div class="message">
+        <i class="fas fa-info-circle"></i>
+        {{ message }}
+    </div>
+    {% endif %}
+{% endblock %}

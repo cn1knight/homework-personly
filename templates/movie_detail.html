@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}{{ movie.title if movie else '电影详情' }} | 光影数据{% endblock %}
+
+{% block content %}
+{% if movie %}
+<div class="content-card movie-detail-container">
+    <div class="movie-header">
+        <img src="{{ movie.poster_url if movie.poster_url else url_for('static', filename='images/default_poster.png') }}" alt="{{ movie.title }}" class="movie-detail-poster">
+        <div class="movie-meta">
+            <h1>{{ movie.title }}</h1>
+            <p class="genres"><i class="fas fa-tags"></i> {{ movie.genres }}</p>
+            <p class="release-date"><i class="fas fa-calendar-alt"></i> 上映日期：{{ movie.release_date if movie.release_date else '未知' }}</p>
+            <div class="rating-summary">
+                <span class="avg-rating"><i class="fas fa-star"></i> {{ movie.avg_rating if movie.avg_rating else '暂无评分' }}</span>
+                <span class="rating-count">({{ movie.rating_count if movie.rating_count else 0 }}人评价)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="movie-description">
+        <h2><i class="fas fa-info-circle"></i> 剧情简介</h2>
+        <p>{{ movie.overview if movie.overview else '暂无简介。' }}</p>
+    </div>
+
+    <div class="movie-ratings-section">
+        <h2><i class="fas fa-comments"></i> 用户评分</h2>
+        {% if ratings %}
+            <div class="ratings-list">
+                {% for rating in ratings %}
+                <div class="rating-item">
+                    <p class="user-info">用户ID: {{ rating.user_id }}</p>
+                    <p class="rating-value">评分: <span class="stars">{{ rating.rating }} <i class="fas fa-star"></i></span></p>
+                    <p class="timestamp">评价时间: {{ rating.timestamp }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-ratings">暂无用户评分。</p>
+        {% endif %}
+    </div>
+
+</div>
+{% else %}
+<div class="message error-message">
+    <i class="fas fa-exclamation-triangle"></i> 未找到指定的电影信息。
+</div>
+{% endif %}
+
+<style>
+.movie-detail-container {
+    padding: 2rem;
+}
+
+.movie-header {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.movie-detail-poster {
+    width: 250px;
+    height: auto;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    object-fit: cover;
+}
+
+.movie-meta h1 {
+    font-size: 2.2rem;
+    color: var(--primary);
+    margin-bottom: 0.8rem;
+}
+
+.movie-meta p {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rating-summary {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+}
+
+.avg-rating {
+    color: var(--accent);
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+.avg-rating i {
+    color: var(--accent);
+}
+
+.rating-count {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.6);
+}
+
+.movie-description h2, .movie-ratings-section h2 {
+    font-size: 1.5rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.movie-description p {
+    line-height: 1.8;
+    color: rgba(255,255,255,0.9);
+}
+
+.movie-ratings-section {
+    margin-top: 2rem;
+}
+
+.ratings-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.rating-item {
+    background-color: var(--dark-bg);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.rating-item p {
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.user-info {
+    font-weight: bold;
+    color: var(--secondary);
+}
+
+.stars {
+    color: var(--accent);
+}
+
+.no-ratings {
+    color: rgba(255,255,255,0.7);
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .movie-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .movie-detail-poster {
+        width: 80%;
+        max-width: 300px;
+    }
+    .movie-meta h1 {
+        font-size: 1.8rem;
+    }
+}
+</style>
+{% endblock %}

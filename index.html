@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}首页 | 光影数据分析平台{% endblock %}
+
+{% block content %}
+<!-- 英雄区域 -->
+<div class="hero-section content-card">
+    <div class="hero-content">
+        <h1>探索电影世界的数据魅力</h1>
+        <p>基于HBase、Spark等大数据技术构建的电影评分分析平台，深入挖掘电影数据，发现观影趋势。</p>
+        <a href="{{ url_for('search_page') }}" class="btn btn-primary hero-btn"><i class="fas fa-search"></i> 开始探索电影</a>
+    </div>
+</div>
+
+<!-- 技术栈展示 -->
+<div class="tech-stack-section content-card">
+    <h2><i class="fas fa-cogs"></i> 核心技术栈</h2>
+    <div class="tech-grid">
+        <div class="tech-item">
+            <img src="{{ url_for('static', filename='images/tech/python.svg') }}" alt="Python">
+            <h3>Python</h3>
+            <p>后端逻辑与数据处理</p>
+        </div>
+        <div class="tech-item">
+            <img src="{{ url_for('static', filename='images/tech/flask.svg') }}" alt="Flask">
+            <h3>Flask</h3>
+            <p>Web框架</p>
+        </div>
+        <div class="tech-item">
+            <img src="{{ url_for('static', filename='images/tech/hbase.svg') }}" alt="HBase">
+            <h3>Apache HBase</h3>
+            <p>分布式NoSQL数据库</p>
+        </div>
+        <div class="tech-item">
+            <img src="{{ url_for('static', filename='images/tech/spark.svg') }}" alt="Spark">
+            <h3>Apache Spark</h3>
+            <p>大数据批处理与流处理</p>
+        </div>
+        <div class="tech-item">
+            <img src="{{ url_for('static', filename='images/tech/html5.svg') }}" alt="HTML5">
+            <h3>HTML5</h3>
+            <p>前端结构</p>
+        </div>
+        <div class="tech-item">
+            <img src="{{ url_for('static', filename='images/tech/css3.svg') }}" alt="CSS3">
+            <h3>CSS3</h3>
+            <p>前端样式</p>
+        </div>
+        <div class="tech-item">
+            <img src="{{ url_for('static', filename='images/tech/javascript.svg') }}" alt="JavaScript">
+            <h3>JavaScript</h3>
+            <p>前端交互</p>
+        </div>
+    </div>
+</div>
+
+<!-- 热门电影 -->
+<div class="hot-movies-section content-card">
+    <h2><i class="fas fa-fire-alt"></i> 时下热门电影</h2>
+    {% if hot_movies and hot_movies|length > 0 %}
+        <div class="movie-results-grid">
+            {% for movie in hot_movies %}
+            <div class="movie-card">
+                <a href="{{ url_for('movie_detail_page', movie_id=movie.movie_id) }}">
+                    <div class="poster-container">
+                        <img src="{{ movie.poster_url if movie.poster_url else url_for('static', filename='images/default_poster.svg') }}" 
+                             alt="{{ movie.title }} 海报"
+                             onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/default_poster.svg') }}'; this.classList.add('default-poster-img');">
+
+
+                    </div>
+                    <div class="movie-card-content">
+                        <h5 class="movie-title">{{ movie.title }}</h5>
+                        <p class="movie-genres">{{ movie.genres.replace('|', ', ') if movie.genres else '类型未知' }}</p>
+                        <div class="movie-rating">
+                            <i class="fas fa-star"></i> {{ movie.avg_rating if movie.avg_rating and movie.avg_rating != 'N/A' else '暂无' }}
+                            <span class="rating-count"> ({{ movie.rating_count if movie.rating_count else '0' }}人评)</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if hot_movies_total_pages and hot_movies_total_pages > 1 %}
+        <nav aria-label="热门电影分页" class="pagination-nav">
+            <ul class="pagination">
+                {% if hot_movies_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=hot_movies_page-1) }}" aria-label="上一页">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                    </li>
+                {% endif %}
+
+                {% set page_window = 2 %}
+                {% for p in range(1, hot_movies_total_pages + 1) %}
+                    {% if p == 1 or p == hot_movies_total_pages or (p >= hot_movies_page - page_window and p <= hot_movies_page + page_window) %}
+                        {% if p == hot_movies_page %}
+                            <li class="page-item active" aria-current="page"><span class="page-link">{{ p }}</span></li>
+                        {% elif p == hot_movies_page - page_window -1 or p == hot_movies_page + page_window + 1 %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="{{ url_for('index', page=p) }}">{{ p }}</a></li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if hot_movies_page < hot_movies_total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=hot_movies_page+1) }}" aria-label="下一页">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="message info-message">
+            <i class="fas fa-info-circle"></i> 暂无热门电影数据。
+            {% if debug_info %}
+                <br><small>调试信息: 数据条数={{ debug_info.hot_movies_count }}, 时间戳={{ debug_info.latest_timestamp or '无' }}</small>
+            {% endif %}
+            <br><small>可能原因：1. 尚未运行流处理脚本生成热门电影数据 2. HBase hot_movies表为空 3. 数据格式问题</small>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* 继承 search_page.html 和 movie_detail.html 中的卡片和分页样式，这里只添加首页特有样式 */
+.hero-section {
+    background: linear-gradient(rgba(var(--rgb-dark), 0.7), rgba(var(--rgb-dark), 0.9)), url("{{ url_for('static', filename='images/hero_bg.jpg') }}");
+    background-size: cover;
+    background-position: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem; /* 与其他 content-card 统一 */
+}
+
+.hero-content h1 {
+    font-size: 2.8rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    color: rgba(255,255,255,0.85);
+    max-width: 700px;
+    margin: 0 auto 2rem auto;
+    line-height: 1.7;
+}
+
+.hero-btn {
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+}
+
+.tech-stack-section h2, .hot-movies-section h2 {
+    color: var(--primary);
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(var(--rgb-light), 0.1);
+    font-size: 1.8rem;
+}
+
+.tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 2rem;
+    text-align: center;
+}
+
+.tech-item img {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+    object-fit: contain;
+}
+
+.tech-item h3 {
+    font-size: 1.1rem;
+    color: var(--secondary);
+    margin-bottom: 0.3rem;
+}
+
+.tech-item p {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.7);
+}
+
+/* 使用 search_page.html 中的电影卡片和分页样式 */
+.movie-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 保持与搜索页一致或按需调整 */
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.movie-card {
+    background: var(--darker-bg);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    border: 1px solid rgba(var(--rgb-light),0.1);
+    display: flex;
+    flex-direction: column; /* 确保内容垂直排列 */
+}
+
+.movie-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.movie-card a {
+    text-decoration: none;
+    color: var(--light);
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* 使链接填满卡片 */
+}
+
+.poster-container {
+    width: 100%;
+    padding-top: 150%; /* 创建一个 2:3 的宽高比容器 */
+    position: relative;
+    background-color: var(--dark-bg); /* 海报加载时的背景色 */
+}
+
+.poster-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.poster-container img.default-poster-img {
+    object-fit: contain; /* 默认图片可能不是标准比例 */
+    padding: 10%; /* 给默认图片一些边距 */
+}
+
+.movie-card-content {
+    padding: 1rem;
+    flex-grow: 1; /* 使内容区域填满剩余空间 */
+    display: flex;
+    flex-direction: column;
+}
+
+.movie-title {
+    font-size: 1.1rem;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.movie-genres {
+    font-size: 0.85rem;
+    color: rgba(var(--rgb-light),0.7);
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1; /* 占据多余空间，将评分推到底部 */
+}
+
+.movie-rating {
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-top: auto; /* 将评分推到卡片底部 */
+}
+.movie-rating .fa-star {
+    margin-right: 0.2rem;
+}
+.movie-rating .rating-count {
+    font-size: 0.8rem;
+    color: rgba(var(--rgb-light),0.6);
+}
+
+/* 分页样式 (与search_page.html共享) */
+.pagination-nav {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.pagination {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.page-item .page-link, .page-item span.page-link {
+    display: block;
+    padding: 0.6rem 1rem;
+    background-color: var(--darker-bg);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    transition: var(--transition);
+    min-width: 40px; /* 确保页码按钮大小一致 */
+    text-align: center;
+}
+
+.page-item a.page-link:hover,
+.page-item.active span.page-link {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.page-item.disabled span.page-link {
+    color: rgba(var(--rgb-light), 0.5);
+    background-color: var(--dark-bg);
+    border-color: rgba(var(--rgb-light), 0.2);
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .hero-content h1 { font-size: 2.2rem; }
+    .hero-content p { font-size: 1rem; }
+    .tech-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1.5rem;
+    }
+    .tech-item img { width: 50px; height: 50px; }
+    .movie-results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .movie-results-grid {
+        grid-template-columns: 1fr; /* 单列显示 */
+    }
+    .poster-container {
+        padding-top: 100%; /* 方形海报区域在小屏幕上 */
+    }
+}
+
+</style>
+{% endblock %}
